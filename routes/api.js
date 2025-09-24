@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
+const aiService = require('../services/aiService');
 
 // Datos de ejemplo (en una aplicación real usarías una base de datos)
 let users = [
@@ -228,8 +229,8 @@ router.post('/products', (req, res) => {
 let pi4Data = [];
 let pi4Counter = 1;
 
-// POST - Procesar datos GMA/SSFFEV/PI4
-router.post('/gma/ssffev/PI4/', (req, res) => {
+// POST - Procesar datos GMA/SSFFEV/PI4 con traducción IA
+router.post('/gma/ssffev/PI4/', async (req, res) => {
   const requestId = `PI4_${pi4Counter++}`;
   const timestamp = new Date().toISOString();
   
@@ -249,13 +250,20 @@ router.post('/gma/ssffev/PI4/', (req, res) => {
       });
     }
 
+    // Detectar tipo de log basado en el contenido
+    const logType = detectLogType(req.body);
+    
+    logger.info(`[${requestId}] Tipo de log detectado: ${logType}`);
+
     // Estructura base para procesar el body
     const processedData = {
       id: requestId,
       receivedAt: timestamp,
       originalData: req.body,
+      logType,
       processedData: null,
-      status: 'received',
+      aiTranslation: null,
+      status: 'processing',
       metadata: {
         ipAddress: req.ip || req.connection.remoteAddress,
         userAgent: req.get('User-Agent'),
@@ -264,34 +272,62 @@ router.post('/gma/ssffev/PI4/', (req, res) => {
       }
     };
 
-    // Aquí es donde procesaremos el body más adelante
-    // Por ahora solo lo almacenamos y registramos
+    // Análisis básico de los datos
     processedData.processedData = {
-      message: 'Datos recibidos correctamente - Procesamiento pendiente',
+      message: 'Datos recibidos y analizados',
       dataKeys: Object.keys(req.body),
       dataTypes: Object.keys(req.body).reduce((types, key) => {
         types[key] = typeof req.body[key];
         return types;
       }, {}),
-      processed: false
+      logType,
+      processed: true,
+      analysisTimestamp: new Date().toISOString()
     };
+
+    // ✨ TRADUCCIÓN CON IA ✨
+    logger.info(`[${requestId}] Iniciando traducción con IA...`);
+    
+    try {
+      const aiResult = await aiService.translateCPILog(req.body, logType);
+      processedData.aiTranslation = aiResult;
+      processedData.status = 'completed_with_ai';
+      
+      logger.info(`[${requestId}] Traducción IA completada: ${aiResult.success ? 'exitosa' : 'con fallback'}`);
+    } catch (aiError) {
+      logger.warn(`[${requestId}] Error en traducción IA: ${aiError.message}`);
+      processedData.aiTranslation = {
+        success: false,
+        error: aiError.message,
+        translation: `Log CPI procesado (ID: ${requestId}) - Traducción IA no disponible`,
+        metadata: { provider: 'none', timestamp: new Date().toISOString() }
+      };
+      processedData.status = 'completed_without_ai';
+    }
 
     // Guardar en almacenamiento temporal
     pi4Data.push(processedData);
     
-    logger.info(`[${requestId}] Datos procesados y almacenados exitosamente`);
+    logger.info(`[${requestId}] Procesamiento completo - Status: ${processedData.status}`);
     
-    // Respuesta de éxito
+    // Respuesta de éxito con traducción IA
     res.status(200).json({
       success: true,
       requestId,
-      message: 'Datos GMA/SSFFEV/PI4 recibidos y procesados correctamente',
+      message: 'Datos GMA/SSFFEV/PI4 procesados con traducción IA',
       timestamp,
+      logType,
       data: {
         processed: processedData.processedData,
         metadata: processedData.metadata
       },
-      nextSteps: 'Los datos están listos para procesamiento adicional'
+      aiTranslation: {
+        available: processedData.aiTranslation.success,
+        message: processedData.aiTranslation.translation,
+        provider: processedData.aiTranslation.metadata?.provider,
+        processingTime: processedData.aiTranslation.metadata?.processingTime
+      },
+      humanReadable: processedData.aiTranslation.translation
     });
 
   } catch (error) {
@@ -303,10 +339,47 @@ router.post('/gma/ssffev/PI4/', (req, res) => {
       requestId,
       message: 'Error interno procesando los datos GMA/SSFFEV/PI4',
       timestamp,
-      error: error.message
+      error: error.message,
+      humanReadable: `❌ Error procesando log CPI (ID: ${requestId}): ${error.message}`
     });
   }
 });
+
+// Función auxiliar para detectar el tipo de log
+function detectLogType(data) {
+  // Detectar errores
+  if (data.error || data.errorCode || data.exception || data.status === 'error') {
+    return 'error';
+  }
+  
+  // Detectar warnings
+  if (data.warning || data.status === 'warning' || data.level === 'warn') {
+    return 'warning';
+  }
+  
+  // Detectar éxito
+  if (data.success === true || data.status === 'success' || data.status === 'completed') {
+    return 'success';
+  }
+  
+  // Detectar transacciones
+  if (data.transactionId || data.orderId || data.paymentInfo) {
+    return 'transaction';
+  }
+  
+  // Detectar configuración
+  if (data.systemConfig || data.configuration || data.settings) {
+    return 'configuration';
+  }
+  
+  // Detectar inventario
+  if (data.inventoryUpdate || data.warehouse || data.stock) {
+    return 'inventory';
+  }
+  
+  // Por defecto
+  return 'info';
+}
 
 // GET - Obtener datos procesados de PI4
 router.get('/gma/ssffev/PI4/', (req, res) => {
@@ -364,6 +437,121 @@ router.delete('/gma/ssffev/PI4/', (req, res) => {
     success: true,
     message: `Se eliminaron ${deletedCount} registros GMA/SSFFEV/PI4`,
     deletedCount,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// === RUTAS DE IA ===
+
+// GET - Estado del servicio de IA
+router.get('/ai/status', async (req, res) => {
+  logger.info('Consultando estado del servicio de IA');
+  
+  try {
+    const status = await aiService.checkAvailability();
+    
+    res.json({
+      success: true,
+      message: 'Estado del servicio de IA',
+      ai: {
+        available: status.available,
+        provider: status.provider,
+        model: process.env.AI_MODEL,
+        status: status.message
+      },
+      configuration: {
+        maxTokens: process.env.AI_MAX_TOKENS,
+        temperature: process.env.AI_TEMPERATURE,
+        supportedProviders: ['groq', 'ollama', 'huggingface']
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error(`Error consultando estado de IA: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error consultando estado del servicio de IA',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// POST - Traducir log manualmente
+router.post('/ai/translate', async (req, res) => {
+  const requestId = `AI_TRANSLATE_${Date.now()}`;
+  
+  logger.info(`[${requestId}] Solicitud de traducción manual de IA`);
+  
+  try {
+    const { logData, logType = 'info' } = req.body;
+    
+    if (!logData) {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requiere el campo logData para traducir',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    logger.info(`[${requestId}] Traduciendo log tipo: ${logType}`);
+    
+    const translation = await aiService.translateCPILog(logData, logType);
+    
+    logger.info(`[${requestId}] Traducción completada: ${translation.success ? 'exitosa' : 'fallback'}`);
+    
+    res.json({
+      success: true,
+      requestId,
+      message: 'Traducción completada',
+      translation: {
+        humanReadable: translation.translation,
+        success: translation.success,
+        provider: translation.metadata?.provider,
+        model: translation.metadata?.model,
+        processingTime: translation.metadata?.processingTime,
+        tokensUsed: translation.metadata?.tokensUsed
+      },
+      originalData: logData,
+      logType,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    logger.error(`[${requestId}] Error en traducción manual: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      requestId,
+      message: 'Error en la traducción',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// GET - Obtener traducciones recientes
+router.get('/ai/translations', (req, res) => {
+  logger.info('Consultando traducciones recientes de IA');
+  
+  const translationsWithAI = pi4Data
+    .filter(item => item.aiTranslation)
+    .map(item => ({
+      id: item.id,
+      receivedAt: item.receivedAt,
+      logType: item.logType,
+      translation: item.aiTranslation.translation,
+      aiSuccess: item.aiTranslation.success,
+      provider: item.aiTranslation.metadata?.provider,
+      processingTime: item.aiTranslation.metadata?.processingTime,
+      tokensUsed: item.aiTranslation.metadata?.tokensUsed
+    }))
+    .slice(-20); // Últimos 20
+    
+  res.json({
+    success: true,
+    message: 'Traducciones recientes recuperadas',
+    total: translationsWithAI.length,
+    translations: translationsWithAI,
     timestamp: new Date().toISOString()
   });
 });

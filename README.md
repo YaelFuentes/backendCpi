@@ -1,4 +1,15 @@
-# Backend CPI - API con Node.js y Express
+# Ba## Características
+
+- 🚀 API RESTful con Express.js
+- 🔐 **Autenticación Basic Auth** para todas las rutas API
+- 🤖 **Integración con IA** para traducir logs CPI a lenguaje natural
+- 📝 Sistema de logging completo con Winston
+- 🔒 Middlewares de seguridad con Helmet
+- 🌐 CORS habilitado para peticiones cross-origin
+- 📊 Logging de peticiones HTTP con Morgan
+- 👤 Logging de usuarios autenticados
+- 🔍 Endpoints de health check
+- 📁 Organización modular del código API con Node.js y Express
 
 Una aplicación backend desarrollada con Node.js y Express que proporciona APIs RESTful con un sistema completo de logging.
 
@@ -72,11 +83,16 @@ npm start
 - `GET /api/products/:id` - Obtener un producto por ID
 - `POST /api/products` - Crear un nuevo producto
 
-### GMA/SSFFEV/PI4 (Requieren autenticación)
-- `POST /api/gma/ssffev/PI4/` - Procesar datos GMA/SSFFEV/PI4
+### GMA/SSFFEV/PI4 con IA (Requieren autenticación)
+- `POST /api/gma/ssffev/PI4/` - **Procesar logs CPI con traducción IA automática**
 - `GET /api/gma/ssffev/PI4/` - Obtener lista de datos procesados
 - `GET /api/gma/ssffev/PI4/:id` - Obtener dato específico por ID
 - `DELETE /api/gma/ssffev/PI4/` - Limpiar todos los datos procesados
+
+### Inteligencia Artificial (Requieren autenticación)
+- `GET /api/ai/status` - **Estado del servicio de IA**
+- `POST /api/ai/translate` - **Traducir logs manualmente con IA**
+- `GET /api/ai/translations` - **Historial de traducciones recientes**
 
 ## Ejemplos de Uso
 
@@ -207,6 +223,64 @@ El proyecto utiliza variables de entorno para la configuración sensible. Todas 
 - ✅ Se proporciona `.env.example` como plantilla
 - ✅ Validación automática de variables requeridas al iniciar
 - ✅ Las contraseñas nunca se muestran en los logs
+
+## 🤖 Integración con Inteligencia Artificial
+
+### **Funcionalidad Principal:**
+Esta aplicación traduce automáticamente logs técnicos de CPI a mensajes comprensibles para usuarios de negocio usando IA.
+
+### **Proveedores de IA Soportados:**
+
+#### 1. **Groq** (Recomendado - Gratuito y Rápido)
+- ✅ **Completamente gratuito**
+- ✅ Muy rápido (respuestas en segundos)
+- ✅ Modelos avanzados (Llama, Mixtral)
+- 📝 Regístrate en: https://console.groq.com/
+
+#### 2. **Ollama** (Local - Completamente Gratuito)
+- ✅ **100% local y privado**
+- ✅ Sin límites de uso
+- ✅ Funciona sin internet
+- 📝 Descarga: https://ollama.ai/
+
+#### 3. **Hugging Face** (Alternativa Gratuita)
+- ✅ Modelos de código abierto
+- ✅ API gratuita con límites
+- 📝 Regístrate en: https://huggingface.co/
+
+### **Tipos de Logs que Traduce:**
+- 🔴 **Errores** - Traduce errores técnicos a impacto de negocio
+- 🟡 **Warnings** - Explica advertencias y acciones recomendadas  
+- 🟢 **Éxito** - Confirma operaciones completadas
+- 📊 **Transacciones** - Resume procesamiento de pedidos/pagos
+- ⚙️ **Configuración** - Explica cambios de sistema
+- 📦 **Inventario** - Traduce actualizaciones de stock
+
+### **Configuración de IA:**
+
+```bash
+# En tu archivo .env
+AI_PROVIDER=groq                    # o 'ollama' o 'huggingface'
+GROQ_API_KEY=tu_api_key_aqui       # Gratis en console.groq.com
+AI_MODEL=llama3-8b-8192            # Modelo a usar
+AI_MAX_TOKENS=500                  # Máximo de tokens por respuesta
+AI_TEMPERATURE=0.3                 # Creatividad (0.0-1.0)
+```
+
+### **Ejemplo de Traducción:**
+
+**Log Técnico Original:**
+```json
+{
+  "errorCode": "CPI_ERR_001",
+  "message": "Connection timeout to SAP system during invoice processing",
+  "transactionId": "TXN_12345",
+  "customerInfo": { "name": "Empresa ABC S.L." }
+}
+```
+
+**Traducción IA:** 🤖
+> "❌ **Error en facturación**: La conexión con SAP se interrumpió mientras se procesaba la factura de Empresa ABC S.L. (ID: TXN_12345). **Impacto**: La factura no se pudo generar. **Acción**: El sistema reintentará automáticamente o contacte a soporte técnico."
 
 ## Tecnologías Utilizadas
 

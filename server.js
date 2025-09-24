@@ -89,7 +89,10 @@ app.get('/', (req, res) => {
     endpoints: {
       users: '/api/users (requiere auth)',
       products: '/api/products (requiere auth)',
-      health: '/api/health (requiere auth)'
+      health: '/api/health (requiere auth)',
+      'gma-pi4': '/api/gma/ssffev/PI4/ (requiere auth)',
+      'ai-status': '/api/ai/status (requiere auth)',
+      'ai-translate': '/api/ai/translate (requiere auth)'
     }
   });
 });

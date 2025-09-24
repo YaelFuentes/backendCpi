@@ -11,6 +11,7 @@
     "env:show": "powershell -ExecutionPolicy Bypass -File .\\env-utils.ps1 -Action show",
     "test:api": "powershell -ExecutionPolicy Bypass -File .\\test-apis.ps1",
     "test:pi4": "powershell -ExecutionPolicy Bypass -File .\\test-pi4-api.ps1",
+    "test:ai": "powershell -ExecutionPolicy Bypass -File .\\test-ai-functionality.ps1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -22,6 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^4.18.2",
