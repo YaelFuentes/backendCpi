@@ -27,6 +27,66 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Ruta de estado de Logtail
+router.get('/logtail/status', (req, res) => {
+  logger.info('Estado de Logtail solicitado');
+  
+  const logtailStatus = logger.getLogtailStatus();
+  
+  res.json({
+    success: true,
+    message: 'Estado de Logtail',
+    logtail: {
+      configured: logtailStatus.configured,
+      token: logtailStatus.token,
+      status: logtailStatus.configured ? 'Activo' : 'No configurado'
+    },
+    logging: {
+      level: process.env.LOG_LEVEL || 'info',
+      environment: process.env.NODE_ENV || 'development'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Ruta de prueba de logs
+router.post('/logtail/test', (req, res) => {
+  const testId = `TEST_${Date.now()}`;
+  
+  logger.info(`[${testId}] Prueba de logging iniciada`, {
+    testId,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip || req.connection.remoteAddress,
+    body: req.body
+  });
+  
+  logger.warn(`[${testId}] Log de advertencia de prueba`, {
+    testId,
+    level: 'warning',
+    source: 'test_endpoint'
+  });
+  
+  logger.error(`[${testId}] Log de error de prueba (simulado)`, {
+    testId,
+    level: 'error',
+    source: 'test_endpoint',
+    simulated: true
+  });
+  
+  res.json({
+    success: true,
+    message: 'Logs de prueba enviados',
+    testId,
+    logs: [
+      'INFO: Prueba de logging iniciada',
+      'WARN: Log de advertencia de prueba',
+      'ERROR: Log de error de prueba (simulado)'
+    ],
+    logtail: logger.getLogtailStatus(),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // === RUTAS DE USUARIOS ===
 
 // GET - Obtener todos los usuarios
