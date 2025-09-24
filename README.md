@@ -16,17 +16,26 @@ Una aplicación backend desarrollada con Node.js y Express que proporciona APIs 
 
 ## Instalación
 
-1. Instalar las dependencias:
+1. **Instalar las dependencias:**
 ```bash
 npm install
 ```
 
-2. Ejecutar en modo desarrollo:
+2. **Configurar variables de entorno:**
+```bash
+# Copiar el archivo de ejemplo
+copy .env.example .env
+
+# Editar .env con tus credenciales de autenticación
+notepad .env
+```
+
+3. **Ejecutar en modo desarrollo:**
 ```bash
 npm run dev
 ```
 
-3. Ejecutar en producción:
+4. **Ejecutar en producción:**
 ```bash
 npm start
 ```
@@ -35,10 +44,12 @@ npm start
 
 🔐 **Todas las rutas `/api/*` requieren autenticación Basic Auth**
 
-### Credenciales de prueba:
-- **admin** / password123
-- **user** / user123  
+### Credenciales (configurables en .env):
+- **admin** / Cpilogger
+- **user** / Yael156503383  
 - **api-client** / client456
+
+> **⚠️ Importante**: Las credenciales se configuran mediante variables de entorno en el archivo `.env`. Nunca subas credenciales reales al repositorio.
 
 ## Endpoints Disponibles
 
@@ -79,26 +90,26 @@ curl http://localhost:3000/auth-info
 
 #### Crear un usuario (con Basic Auth)
 ```bash
-curl -u admin:password123 -X POST http://localhost:3000/api/users \
+curl -u admin:Cpilogger -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
   -d '{"name": "Juan Pérez", "email": "juan@example.com", "age": 30}'
 ```
 
 #### Obtener todos los usuarios (con Basic Auth)
 ```bash
-curl -u admin:password123 http://localhost:3000/api/users
+curl -u admin:Cpilogger http://localhost:3000/api/users
 ```
 
 #### Crear un producto (con Basic Auth)
 ```bash
-curl -u admin:password123 -X POST http://localhost:3000/api/products \
+curl -u admin:Cpilogger -X POST http://localhost:3000/api/products \
   -H "Content-Type: application/json" \
   -d '{"name": "Laptop Gaming", "price": 1299.99, "category": "Electronics"}'
 ```
 
 #### Enviar datos a GMA/SSFFEV/PI4 (con Basic Auth)
 ```bash
-curl -u admin:password123 -X POST http://localhost:3000/api/gma/ssffev/PI4/ \
+curl -u admin:Cpilogger -X POST http://localhost:3000/api/gma/ssffev/PI4/ \
   -H "Content-Type: application/json" \
   -d '{
     "transactionId": "TXN001",
@@ -118,13 +129,13 @@ curl -u admin:password123 -X POST http://localhost:3000/api/gma/ssffev/PI4/ \
 ### Con PowerShell
 ```powershell
 # Configurar credenciales
-$credential = Get-Credential  # Ingresa admin/password123
+$credential = Get-Credential  # Ingresa admin/Cpilogger
 
 # Hacer petición autenticada
 Invoke-RestMethod -Uri "http://localhost:3000/api/users" -Method Get -Credential $credential
 
 # O usando headers
-$auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:password123"))
+$auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("admin:Cpilogger"))
 $headers = @{ Authorization = "Basic $auth" }
 Invoke-RestMethod -Uri "http://localhost:3000/api/users" -Method Get -Headers $headers
 ```
@@ -170,10 +181,38 @@ backendCpi/
 └── README.md           # Este archivo
 ```
 
+## Variables de Entorno
+
+El proyecto utiliza variables de entorno para la configuración sensible. Todas las variables se definen en el archivo `.env`:
+
+### Variables de Autenticación:
+- `AUTH_ADMIN_USER` - Usuario administrador
+- `AUTH_ADMIN_PASS` - Contraseña del administrador
+- `AUTH_USER_USER` - Usuario estándar
+- `AUTH_USER_PASS` - Contraseña del usuario estándar
+- `AUTH_CLIENT_USER` - Usuario para cliente API
+- `AUTH_CLIENT_PASS` - Contraseña del cliente API
+
+### Variables del Servidor:
+- `PORT` - Puerto del servidor (default: 3000)
+- `NODE_ENV` - Entorno de ejecución (development/production)
+- `LOG_LEVEL` - Nivel de logging (debug/info/warn/error)
+
+### Variables de Autenticación:
+- `AUTH_REALM` - Nombre del realm para Basic Auth
+- `AUTH_CHALLENGE` - Mostrar diálogo de autenticación (true/false)
+
+### 🔒 Seguridad:
+- ✅ El archivo `.env` está incluido en `.gitignore`
+- ✅ Se proporciona `.env.example` como plantilla
+- ✅ Validación automática de variables requeridas al iniciar
+- ✅ Las contraseñas nunca se muestran en los logs
+
 ## Tecnologías Utilizadas
 
 - **Express.js** - Framework web para Node.js
 - **express-basic-auth** - Middleware de autenticación básica
+- **dotenv** - Gestión de variables de entorno
 - **Winston** - Logger para Node.js
 - **Morgan** - Middleware de logging HTTP
 - **Helmet** - Middlewares de seguridad

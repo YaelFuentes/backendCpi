@@ -22,7 +22,7 @@ const customFormat = winston.format.combine(
 
 // Crear el logger
 const logger = winston.createLogger({
-  level: 'info',
+  level: process.env.LOG_LEVEL || 'info',
   format: customFormat,
   transports: [
     // Escribir todos los logs en 'combined.log'

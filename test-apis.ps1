@@ -4,14 +4,14 @@
 
 # Configurar credenciales para Basic Auth
 $username = "admin"
-$password = "password123"
+$password = "Cpilogger"
 $base64AuthInfo = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $username, $password)))
 $headers = @{
     Authorization = "Basic $base64AuthInfo"
 }
 
 # Método alternativo usando PSCredential
-$securePassword = ConvertTo-SecureString "password123" -AsPlainText -Force
+$securePassword = ConvertTo-SecureString "Cpilogger" -AsPlainText -Force
 $credential = New-Object System.Management.Automation.PSCredential ("admin", $securePassword)
 
 Write-Host "=== RUTAS SIN AUTENTICACIÓN ===" -ForegroundColor Green
