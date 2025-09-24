@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Basic Auth - Backend CPI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .auth-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            color: #2196F3;
+            margin-top: 0;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        .error-button {
+            background-color: #f44336;
+        }
+        .error-button:hover {
+            background-color: #d32f2f;
+        }
+        .response {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            border-left: 4px solid #2196F3;
+        }
+        .credentials {
+            background-color: #fff3e0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .credentials strong {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test de Autenticación Basic Auth</h1>
+        <h2>Backend CPI API</h2>
+        
+        <div class="auth-info">
+            <h3>ℹ️ Información Important</h3>
+            <p>Esta página te permite probar la autenticación Basic Auth de la API. Cuando hagas clic en los botones que requieren autenticación, el navegador te pedirá credenciales.</p>
+        </div>
+
+        <div class="credentials">
+            <h3>🔑 Credenciales de Prueba:</h3>
+            <ul>
+                <li><strong>admin</strong> / password123</li>
+                <li><strong>user</strong> / user123</li>
+                <li><strong>api-client</strong> / client456</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🌐 Rutas SIN Autenticación</h3>
+            <p>Estas rutas funcionan sin necesidad de autenticación:</p>
+            <button onclick="testRoute('/', 'GET', false)">GET /</button>
+            <button onclick="testRoute('/auth-info', 'GET', false)">GET /auth-info</button>
+            <div id="no-auth-response" class="response" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔒 Rutas CON Autenticación Requerida</h3>
+            <p>Estas rutas requieren autenticación Basic Auth:</p>
+            <button onclick="testRoute('/api/health', 'GET', true)">GET /api/health</button>
+            <button onclick="testRoute('/api/users', 'GET', true)">GET /api/users</button>
+            <button onclick="testRoute('/api/products', 'GET', true)">GET /api/products</button>
+            <div id="auth-response" class="response" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>❌ Pruebas de Error</h3>
+            <p>Estas rutas deberían mostrar errores:</p>
+            <button class="error-button" onclick="testRoute('/api/nonexistent', 'GET', true)">Ruta inexistente</button>
+            <div id="error-response" class="response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testRoute(endpoint, method, requiresAuth) {
+            const url = `http://localhost:3000${endpoint}`;
+            const responseId = requiresAuth ? 'auth-response' : 
+                              endpoint.includes('nonexistent') ? 'error-response' : 'no-auth-response';
+            
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                document.getElementById(responseId).style.display = 'block';
+                document.getElementById(responseId).textContent = 
+                    `Status: ${response.status}\n` +
+                    `URL: ${url}\n` +
+                    `Response:\n${JSON.stringify(data, null, 2)}`;
+                    
+            } catch (error) {
+                document.getElementById(responseId).style.display = 'block';
+                document.getElementById(responseId).textContent = 
+                    `Error al conectar con: ${url}\n` +
+                    `Error: ${error.message}\n\n` +
+                    `Nota: Si requiere autenticación, el navegador debería mostrar un diálogo de login.`;
+            }
+        }
+
+        // Función para limpiar respuestas
+        function clearResponses() {
+            document.getElementById('no-auth-response').style.display = 'none';
+            document.getElementById('auth-response').style.display = 'none';
+            document.getElementById('error-response').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
