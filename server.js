@@ -17,6 +17,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Servir archivos estáticos (para el frontend)
+app.use('/dashboard', express.static('public'));
+
 // Configuración de Basic Auth
 const authMiddleware = basicAuth({
   users: AUTH_CONFIG.users,
@@ -87,12 +90,15 @@ app.get('/', (req, res) => {
       note: 'Se requiere autenticación para acceder a las rutas /api/*'
     },
     endpoints: {
+      dashboard: '/dashboard (Frontend web)',
       users: '/api/users (requiere auth)',
       products: '/api/products (requiere auth)',  
       health: '/api/health (requiere auth)',
       'gma-pi4': '/api/gma/ssffev/PI4/ (requiere auth)',
       'logtail-status': '/api/logtail/status (requiere auth)',
-      'logtail-test': '/api/logtail/test (requiere auth)'
+      'logtail-test': '/api/logtail/test (requiere auth)',
+      evaluar: '/api/evaluar/* (solo recepción de datos, requiere auth)',
+      pruebas: '/api/pruebas/* (solo recepción de datos, requiere auth)'
     }
   });
 });

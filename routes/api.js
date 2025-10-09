@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 const aiService = require('../services/aiService');
+// Sub-routers modulares
+const evaluarRoutes = require('./evaluar');
+const pruebasRoutes = require('./pruebas');
 
 // Datos de ejemplo (en una aplicación real usarías una base de datos)
 let users = [
@@ -15,6 +18,10 @@ let products = [
   { id: 2, name: 'Mouse', price: 29.99, category: 'Electronics' },
   { id: 3, name: 'Keyboard', price: 79.99, category: 'Electronics' }
 ];
+
+// Montar sub-routers modulares
+router.use('/evaluar', evaluarRoutes);
+router.use('/pruebas', pruebasRoutes);
 
 // Ruta de health check
 router.get('/health', (req, res) => {
@@ -85,6 +92,62 @@ router.post('/logtail/test', (req, res) => {
     logtail: logger.getLogtailStatus(),
     timestamp: new Date().toISOString()
   });
+});
+
+// Ruta para obtener logs recientes (para el dashboard)
+router.get('/logs/recent', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    const logsDir = path.join(__dirname, '../logs');
+    const combinedLogPath = path.join(logsDir, 'combined.log');
+    
+    if (!fs.existsSync(combinedLogPath)) {
+      return res.json({
+        success: true,
+        logs: [],
+        message: 'Archivo de logs no encontrado'
+      });
+    }
+    
+    const logContent = fs.readFileSync(combinedLogPath, 'utf8');
+    const logLines = logContent.split('\n')
+      .filter(line => line.trim())
+      .slice(-50) // Últimas 50 líneas
+      .map(line => {
+        try {
+          const logData = JSON.parse(line);
+          return {
+            timestamp: logData.timestamp,
+            level: logData.level,
+            message: logData.message,
+            meta: logData.meta || {}
+          };
+        } catch {
+          return {
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: line,
+            meta: {}
+          };
+        }
+      });
+    
+    res.json({
+      success: true,
+      logs: logLines,
+      total: logLines.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error leyendo logs recientes: ' + error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Error leyendo logs',
+      error: error.message
+    });
+  }
 });
 
 // === RUTAS DE USUARIOS ===
