@@ -149,6 +149,12 @@
             <button id="test-ping">🏓 Test Ping</button>
             <button id="browser-test" class="warning">🌐 Abrir en Browser</button>
             <button id="clear-btn" class="danger">🧹 Limpiar</button>
+            
+            <hr style="margin: 15px 0; border: 1px solid #ddd;">
+            
+            <button id="load-logs-btn" class="warning">📊 Cargar Logs Servidor</button>
+            <button id="show-orden-logs-btn" style="font-size: 11px;">📋 Logs Orden</button>
+            <button id="show-ping-logs-btn" style="font-size: 11px;">📋 Logs Ping</button>
 
             <div class="debug-info">
                 <strong>Test Manual:</strong><br>
@@ -196,6 +202,31 @@
                     }
                 }
             }, 1000);
+            
+            // Agregar event listeners para los nuevos botones de logs
+            setTimeout(() => {
+                const loadLogsBtn = document.getElementById('load-logs-btn');
+                const showOrdenLogsBtn = document.getElementById('show-orden-logs-btn');
+                const showPingLogsBtn = document.getElementById('show-ping-logs-btn');
+                
+                if (loadLogsBtn && window.dashboardApp) {
+                    loadLogsBtn.addEventListener('click', () => {
+                        window.dashboardApp.loadServerLogs();
+                    });
+                }
+                
+                if (showOrdenLogsBtn && window.dashboardApp) {
+                    showOrdenLogsBtn.addEventListener('click', () => {
+                        window.dashboardApp.showAPILogs('evaluar/orden');
+                    });
+                }
+                
+                if (showPingLogsBtn && window.dashboardApp) {
+                    showPingLogsBtn.addEventListener('click', () => {
+                        window.dashboardApp.showAPILogs('pruebas/ping');
+                    });
+                }
+            }, 2000);
         });
     </script>
 </body>

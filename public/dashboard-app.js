@@ -274,8 +274,19 @@ async function testAPI(endpoint, data = null) {
         if (response.ok) {
             const responseData = await response.json();
             log(`API ${endpoint} OK - RequestID: ${responseData.requestId}`, 'success');
+            log(`   Response: ${JSON.stringify(responseData, null, 2)}`, 'info');
+            log(`   Timestamp: ${responseData.receivedAt}`, 'info');
+            log(`   Body Size: ${responseData.meta?.bodySize || 0} bytes`, 'info');
+            
+            // Cargar logs relacionados después de unos segundos
+            setTimeout(() => {
+                log(`🔍 Buscando logs del servidor para ${endpoint}...`, 'info');
+                showAPILogs(endpoint);
+            }, 2000);
         } else {
+            const errorText = await response.text();
             log(`API ${endpoint} Error: ${response.status}`, 'error');
+            log(`   Error Details: ${errorText}`, 'error');
         }
     } catch (error) {
         log(`Error en API ${endpoint}: ${error.message}`, 'error');
@@ -306,14 +317,105 @@ document.addEventListener('DOMContentLoaded', function() {
 // También intentar inicializar cuando la página esté completamente cargada
 window.addEventListener('load', function() {
     console.log('Página completamente cargada');
-    if (config.baseUrl) {
-        log('Configuración detectada, ejecutando test automático en 2 segundos...');
-        setTimeout(() => {
-            console.log('Ejecutando test automático...');
-            testConnection();
-        }, 2000);
-    }
+    setTimeout(() => {
+        if (config.baseUrl) {
+            log('Configuración detectada, ejecutando test automático en 2 segundos...');
+            setTimeout(() => {
+                console.log('Ejecutando test automático...');
+                testConnection();
+            }, 2000);
+        }
+    }, 1000);
 });
+
+// Función para cargar logs del servidor
+async function loadServerLogs() {
+    if (!config.baseUrl) {
+        log('❌ Configura primero la URL del servidor', 'error');
+        return;
+    }
+
+    log('📊 Cargando logs del servidor...', 'info');
+
+    try {
+        const response = await fetch(config.baseUrl + '/api/logs/recent', {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.logs && data.logs.length > 0) {
+                log('=== LOGS DEL SERVIDOR ===', 'info');
+
+                data.logs.forEach(logEntry => {
+                    const timestamp = new Date(logEntry.timestamp).toLocaleTimeString();
+                    const level = logEntry.level.toUpperCase();
+                    const message = logEntry.message;
+                    
+                    // Determinar tipo de log para colorear
+                    let logType = 'info';
+                    if (level.includes('ERROR')) logType = 'error';
+                    else if (level.includes('WARN')) logType = 'warn';
+                    else if (level.includes('SUCCESS') || message.includes('exitosa')) logType = 'success';
+                    
+                    const logMessage = `[${timestamp}] [${level}] ${message}`;
+                    log(logMessage, logType);
+                    
+                    // Si hay metadata, mostrarla también
+                    if (logEntry.meta && Object.keys(logEntry.meta).length > 0) {
+                        log(`   Meta: ${JSON.stringify(logEntry.meta)}`, 'info');
+                    }
+                });
+
+                log(`=== ${data.logs.length} logs cargados ===`, 'info');
+            } else {
+                log('No hay logs recientes en el servidor', 'warn');
+            }
+        } else {
+            log('❌ Error cargando logs del servidor: ' + response.status, 'error');
+        }
+    } catch (error) {
+        log('❌ Error de red cargando logs: ' + error.message, 'error');
+    }
+}
+
+// Función para mostrar logs de una API específica
+async function showAPILogs(endpoint) {
+    if (!config.baseUrl) {
+        log('❌ Configura primero la URL del servidor', 'error');
+        return;
+    }
+
+    log(`📊 Buscando logs relacionados con ${endpoint}...`, 'info');
+    
+    try {
+        const response = await fetch(config.baseUrl + '/api/logs/recent', {
+            headers: getAuthHeaders()
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            const relatedLogs = data.logs.filter(logEntry => 
+                logEntry.message.includes(endpoint) || 
+                (logEntry.meta && JSON.stringify(logEntry.meta).includes(endpoint))
+            );
+
+            if (relatedLogs.length > 0) {
+                log(`📋 Encontrados ${relatedLogs.length} logs para ${endpoint}:`, 'success');
+                relatedLogs.forEach(logEntry => {
+                    const timestamp = new Date(logEntry.timestamp).toLocaleTimeString();
+                    log(`   [${timestamp}] ${logEntry.message}`, 'info');
+                });
+            } else {
+                log(`ℹ️ No se encontraron logs específicos para ${endpoint}`, 'info');
+                log(`💡 Tip: Ejecuta el endpoint y luego busca logs`, 'info');
+            }
+        }
+    } catch (error) {
+        log(`❌ Error buscando logs para ${endpoint}: ${error.message}`, 'error');
+    }
+}
 
 // Exponer funciones globalmente para debugging
 window.dashboardApp = {
@@ -325,5 +427,7 @@ window.dashboardApp = {
     testAPI,
     openInBrowser,
     clearConsole,
-    log
+    log,
+    loadServerLogs,
+    showAPILogs
 };
