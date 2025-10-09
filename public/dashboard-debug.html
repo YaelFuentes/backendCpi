@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend CPI - Debug Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .status-offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            padding: 15px;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .log-info {
+            border-left-color: #007acc;
+            color: #9cdcfe;
+        }
+
+        .log-success {
+            border-left-color: #4ec9b0;
+            color: #4ec9b0;
+        }
+
+        .log-error {
+            border-left-color: #f14c4c;
+            color: #f14c4c;
+        }
+
+        .log-warn {
+            border-left-color: #ffcc00;
+            color: #ffcc00;
+        }
+
+        .debug-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #007acc;
+        }
+
+        .debug-info {
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="card">
+            <div class="header">
+                <h1>🔧 Backend CPI - Debug Dashboard</h1>
+                <p>Versión mejorada con debugging avanzado</p>
+            </div>
+
+            <div class="status-bar">
+                <div id="server-status" class="status-item status-offline">
+                    <span>⚫</span> Servidor: Desconectado
+                </div>
+                <div id="auth-status" class="status-item status-offline">
+                    <span>🔒</span> Auth: No configurado
+                </div>
+                <div id="cors-status" class="status-item status-offline">
+                    <span>🌐</span> CORS: Desconocido
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Configuración -->
+            <div class="card">
+                <h3>🔐 Configuración</h3>
+                
+                <div class="form-group">
+                    <label>URL del Servidor:</label>
+                    <input type="text" id="server-url" value="https://backendcpi.onrender.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Usuario:</label>
+                    <input type="text" id="username" value="admin">
+                </div>
+
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="password" value="Cpilogger">
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-primary" onclick="saveConfig()">💾 Guardar Config</button>
+                    <button class="btn btn-success" onclick="testConnection()">🔍 Test Conexión</button>
+                </div>
+
+                <!-- Debug Info -->
+                <div class="debug-section">
+                    <h4>🐛 Debug Info</h4>
+                    <div class="debug-info" id="debug-info">
+                        <strong>URL Actual:</strong> <span id="current-url">No configurada</span><br>
+                        <strong>Auth Header:</strong> <span id="auth-header">No configurado</span><br>
+                        <strong>CORS Origin:</strong> <span id="cors-origin">Desconocido</span><br>
+                        <strong>User Agent:</strong> <span id="user-agent">Cargando...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tests Rápidos -->
+            <div class="card">
+                <h3>🧪 Tests Rápidos</h3>
+                
+                <button class="btn btn-primary" onclick="testBrowserDirect()">🌐 Test Browser Directo</button>
+                <button class="btn btn-success" onclick="testHealthEndpoint()">❤️ Test Health</button>
+                <button class="btn btn-warning" onclick="testCORS()">🔄 Test CORS</button>
+                <button class="btn btn-danger" onclick="testAuth()">🔐 Test Auth</button>
+
+                <hr style="margin: 20px 0;">
+
+                <h4>🚀 Test APIs</h4>
+                <button class="btn btn-primary" onclick="testAPI('evaluar/orden')">📦 Test Orden</button>
+                <button class="btn btn-primary" onclick="testAPI('pruebas/ping')">🏓 Test Ping</button>
+
+                <hr style="margin: 20px 0;">
+
+                <h4>🛠️ Herramientas</h4>
+                <button class="btn btn-warning" onclick="clearLocalStorage()">🗑️ Limpiar Storage</button>
+                <button class="btn btn-warning" onclick="clearConsole()">🧹 Limpiar Console</button>
+                <button class="btn btn-danger" onclick="forceRefresh()">🔄 Forzar Refresh</button>
+            </div>
+        </div>
+
+        <!-- Console -->
+        <div class="card">
+            <h3>🖥️ Debug Console</h3>
+            <div class="console" id="console"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let config = {
+            baseUrl: '',
+            username: '',
+            password: ''
+        };
+
+        // Logging mejorado
+        function logToConsole(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry log-' + type;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            console.appendChild(logEntry);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console').innerHTML = '';
+            logToConsole('🧹 Console limpiada', 'info');
+        }
+
+        // Actualizar debug info
+        function updateDebugInfo() {
+            document.getElementById('current-url').textContent = config.baseUrl || 'No configurada';
+            document.getElementById('auth-header').textContent = getAuthHeader() || 'No configurado';
+            document.getElementById('cors-origin').textContent = window.location.origin;
+            document.getElementById('user-agent').textContent = navigator.userAgent.substring(0, 50) + '...';
+        }
+
+        // Generar header de auth
+        function getAuthHeader() {
+            if (!config.username || !config.password) {
+                return null;
+            }
+            const credentials = btoa(config.username + ':' + config.password);
+            return 'Basic ' + credentials;
+        }
+
+        // Generar headers completos
+        function getHeaders() {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            const authHeader = getAuthHeader();
+            if (authHeader) {
+                headers['Authorization'] = authHeader;
+            }
+            
+            return headers;
+        }
+
+        // Guardar configuración
+        function saveConfig() {
+            config.baseUrl = document.getElementById('server-url').value.trim().replace(/\/$/, '');
+            config.username = document.getElementById('username').value.trim();
+            config.password = document.getElementById('password').value.trim();
+
+            // Guardar en localStorage
+            localStorage.setItem('debug_config', JSON.stringify(config));
+
+            updateDebugInfo();
+            updateStatus('auth', config.username ? 'Configurado: ' + config.username : 'No configurado', config.username ? 'online' : 'offline');
+            
+            logToConsole(`✅ Configuración guardada`, 'success');
+            logToConsole(`   URL: ${config.baseUrl}`, 'info');
+            logToConsole(`   Usuario: ${config.username}`, 'info');
+            logToConsole(`   Password: ${'*'.repeat(config.password.length)}`, 'info');
+        }
+
+        // Actualizar estados
+        function updateStatus(type, message, status) {
+            const element = document.getElementById(type + '-status');
+            element.className = 'status-item status-' + status;
+            element.innerHTML = getStatusIcon(type) + ' ' + getStatusLabel(type) + ': ' + message;
+        }
+
+        function getStatusIcon(type) {
+            switch(type) {
+                case 'server': return '<span>🟢</span>';
+                case 'auth': return '<span>🔒</span>';
+                case 'cors': return '<span>🌐</span>';
+                default: return '<span>❓</span>';
+            }
+        }
+
+        function getStatusLabel(type) {
+            switch(type) {
+                case 'server': return 'Servidor';
+                case 'auth': return 'Auth';
+                case 'cors': return 'CORS';
+                default: return 'Desconocido';
+            }
+        }
+
+        // Test de conexión principal
+        async function testConnection() {
+            if (!config.baseUrl) {
+                logToConsole('❌ Error: Configura primero la URL del servidor', 'error');
+                return;
+            }
+
+            logToConsole('🔍 Iniciando test de conexión completo...', 'info');
+            logToConsole(`   Target: ${config.baseUrl}/api/health`, 'info');
+
+            try {
+                logToConsole('📡 Enviando request...', 'info');
+                
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET',
+                    headers: getHeaders(),
+                    mode: 'cors',
+                    credentials: 'include'
+                });
+
+                logToConsole(`📊 Respuesta recibida: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logToConsole('✅ ¡Conexión exitosa!', 'success');
+                    logToConsole(`   Status: ${data.status}`, 'success');
+                    logToConsole(`   Uptime: ${Math.floor(data.uptime)}s`, 'success');
+                    
+                    updateStatus('server', 'Conectado', 'online');
+                    updateStatus('cors', 'OK', 'online');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                logToConsole('❌ Error de conexión:', 'error');
+                logToConsole(`   ${error.name}: ${error.message}`, 'error');
+                
+                updateStatus('server', 'Error: ' + error.message, 'offline');
+                
+                // Diagnosticar tipo de error
+                if (error.message.includes('CORS')) {
+                    logToConsole('🔍 Posible problema de CORS', 'warn');
+                    updateStatus('cors', 'Error CORS', 'offline');
+                } else if (error.message.includes('401')) {
+                    logToConsole('🔍 Problema de autenticación', 'warn');
+                } else if (error.message.includes('Failed to fetch')) {
+                    logToConsole('🔍 Problema de red o servidor inactivo', 'warn');
+                }
+            }
+        }
+
+        // Test directo con browser
+        function testBrowserDirect() {
+            if (!config.baseUrl) {
+                logToConsole('❌ Configura primero la URL', 'error');
+                return;
+            }
+
+            const url = config.baseUrl + '/api/health';
+            logToConsole('🌐 Abriendo en nueva pestaña: ' + url, 'info');
+            logToConsole('   Usuario: ' + config.username, 'info');
+            logToConsole('   Contraseña: ' + '*'.repeat(config.password.length), 'info');
+            
+            window.open(url, '_blank');
+        }
+
+        // Test específico de health
+        async function testHealthEndpoint() {
+            if (!config.baseUrl) {
+                logToConsole('❌ Configura primero la URL', 'error');
+                return;
+            }
+
+            logToConsole('❤️ Testing health endpoint específicamente...', 'info');
+
+            try {
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+
+                const responseText = await response.text();
+                logToConsole('📄 Respuesta raw:', 'info');
+                logToConsole('   ' + responseText.substring(0, 200), 'info');
+
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        logToConsole('✅ Health endpoint OK', 'success');
+                        logToConsole('   Data: ' + JSON.stringify(data, null, 2), 'success');
+                    } catch (e) {
+                        logToConsole('⚠️ Respuesta no es JSON válido', 'warn');
+                    }
+                } else {
+                    logToConsole('❌ Health endpoint error: ' + response.status, 'error');
+                }
+            } catch (error) {
+                logToConsole('❌ Error en health test: ' + error.message, 'error');
+            }
+        }
+
+        // Test CORS específico
+        async function testCORS() {
+            logToConsole('🔄 Testing CORS...', 'info');
+            logToConsole('   Origin: ' + window.location.origin, 'info');
+            
+            try {
+                const response = await fetch(config.baseUrl + '/', {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                logToConsole('✅ CORS básico OK', 'success');
+                updateStatus('cors', 'OK', 'online');
+            } catch (error) {
+                logToConsole('❌ CORS Error: ' + error.message, 'error');
+                updateStatus('cors', 'Error', 'offline');
+            }
+        }
+
+        // Test Auth específico
+        async function testAuth() {
+            if (!config.baseUrl) {
+                logToConsole('❌ Configura primero la URL', 'error');
+                return;
+            }
+
+            logToConsole('🔐 Testing autenticación...', 'info');
+
+            // Test sin auth
+            try {
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET'
+                });
+                
+                if (response.status === 401) {
+                    logToConsole('✅ Auth requerida correctamente (401 sin credenciales)', 'success');
+                } else {
+                    logToConsole('⚠️ No requiere auth o auth incorrecta', 'warn');
+                }
+            } catch (error) {
+                logToConsole('❌ Error en test sin auth: ' + error.message, 'error');
+            }
+
+            // Test con auth
+            try {
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                
+                if (response.ok) {
+                    logToConsole('✅ Auth exitosa', 'success');
+                } else if (response.status === 401) {
+                    logToConsole('❌ Credenciales incorrectas', 'error');
+                } else {
+                    logToConsole('⚠️ Respuesta inesperada: ' + response.status, 'warn');
+                }
+            } catch (error) {
+                logToConsole('❌ Error en test con auth: ' + error.message, 'error');
+            }
+        }
+
+        // Test API específica
+        async function testAPI(endpoint) {
+            if (!config.baseUrl) {
+                logToConsole('❌ Configura primero la URL', 'error');
+                return;
+            }
+
+            logToConsole(`🚀 Testing API: /api/${endpoint}`, 'info');
+
+            const testData = {
+                test: true,
+                timestamp: new Date().toISOString(),
+                source: 'debug-dashboard',
+                endpoint: endpoint
+            };
+
+            try {
+                const response = await fetch(config.baseUrl + '/api/' + endpoint, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(testData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    logToConsole(`✅ API ${endpoint} OK`, 'success');
+                    logToConsole(`   RequestID: ${data.requestId}`, 'success');
+                } else {
+                    logToConsole(`❌ API ${endpoint} Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                logToConsole(`❌ Error en API ${endpoint}: ${error.message}`, 'error');
+            }
+        }
+
+        // Herramientas
+        function clearLocalStorage() {
+            localStorage.clear();
+            logToConsole('🗑️ LocalStorage limpiado', 'warn');
+        }
+
+        function forceRefresh() {
+            logToConsole('🔄 Forzando refresh completo...', 'warn');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            logToConsole('🚀 Debug Dashboard iniciado', 'success');
+
+            // Cargar configuración guardada
+            const savedConfig = localStorage.getItem('debug_config');
+            if (savedConfig) {
+                try {
+                    config = JSON.parse(savedConfig);
+                    document.getElementById('server-url').value = config.baseUrl || '';
+                    document.getElementById('username').value = config.username || '';
+                    document.getElementById('password').value = config.password || '';
+                    logToConsole('📂 Configuración cargada desde localStorage', 'info');
+                } catch (e) {
+                    logToConsole('⚠️ Error cargando configuración guardada', 'warn');
+                }
+            }
+
+            updateDebugInfo();
+            
+            logToConsole('💡 Usa "💾 Guardar Config" y luego "🔍 Test Conexión"', 'info');
+        });
+    </script>
+</body>
+</html>
