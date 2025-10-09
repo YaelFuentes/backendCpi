@@ -6,11 +6,14 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "dashboard": "powershell -ExecutionPolicy Bypass -File .\\open-dashboard.ps1",
+    "dashboard:dev": "powershell -ExecutionPolicy Bypass -File .\\open-dashboard.ps1 -DevMode",
     "setup": "powershell -ExecutionPolicy Bypass -File .\\env-utils.ps1 -Action setup",
     "env:validate": "powershell -ExecutionPolicy Bypass -File .\\env-utils.ps1 -Action validate",
     "env:show": "powershell -ExecutionPolicy Bypass -File .\\env-utils.ps1 -Action show",
     "test:api": "powershell -ExecutionPolicy Bypass -File .\\test-apis.ps1",
     "test:pi4": "powershell -ExecutionPolicy Bypass -File .\\test-pi4-api.ps1",
+    "test:evaluar": "powershell -ExecutionPolicy Bypass -File .\\test-evaluar-pruebas.ps1",
     "test:ai": "powershell -ExecutionPolicy Bypass -File .\\test-ai-functionality.ps1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,8 +26,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@logtail/node": "^0.5.6",
-    "@logtail/winston": "^0.5.6",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
