@@ -19,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir archivos estáticos (para el frontend)
 app.use('/dashboard', express.static('public'));
+app.use(express.static('public')); // Servir archivos estáticos en la raíz también
 
 // Configuración de Basic Auth
 const authMiddleware = basicAuth({
@@ -90,7 +91,8 @@ app.get('/', (req, res) => {
       note: 'Se requiere autenticación para acceder a las rutas /api/*'
     },
     endpoints: {
-      dashboard: '/dashboard (Frontend web)',
+      dashboard: '/dashboard (Frontend web - accesible por URL)',
+      dashboardAlt: '/dashboard.html (Alternativa)',
       users: '/api/users (requiere auth)',
       products: '/api/products (requiere auth)',  
       health: '/api/health (requiere auth)',
