@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend CPI - Test Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            background: #28a745;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .warning {
+            background: #ffc107;
+            color: black;
+        }
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            min-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status-ok {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 Backend CPI - Test Simple</h1>
+        <p>Versión sin JavaScript inline (compatible con CSP)</p>
+        
+        <div id="status" class="status status-error">
+            Estado: No configurado
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>🔐 Configuración</h3>
+            
+            <div class="form-group">
+                <label for="server-url">URL del Servidor:</label>
+                <input type="text" id="server-url" value="https://backendcpi.onrender.com">
+            </div>
+
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" value="admin">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" value="Cpilogger">
+            </div>
+
+            <button id="save-btn">💾 Guardar Config</button>
+            <button id="test-btn" class="success">🔍 Test Conexión</button>
+            <button id="health-btn" class="warning">❤️ Test Health</button>
+        </div>
+
+        <div class="card">
+            <h3>🧪 Tests de API</h3>
+            
+            <button id="test-orden">📦 Test Orden</button>
+            <button id="test-ping">🏓 Test Ping</button>
+            <button id="browser-test" class="warning">🌐 Abrir en Browser</button>
+            <button id="clear-btn" class="danger">🧹 Limpiar</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🖥️ Console</h3>
+        <div id="console" class="console">Iniciando dashboard...\n</div>
+    </div>
+
+    <script>
+        // Configuración global
+        let config = {
+            baseUrl: '',
+            username: '',
+            password: ''
+        };
+
+        // Elementos del DOM
+        const elements = {
+            serverUrl: document.getElementById('server-url'),
+            username: document.getElementById('username'),
+            password: document.getElementById('password'),
+            console: document.getElementById('console'),
+            status: document.getElementById('status'),
+            saveBtn: document.getElementById('save-btn'),
+            testBtn: document.getElementById('test-btn'),
+            healthBtn: document.getElementById('health-btn'),
+            testOrden: document.getElementById('test-orden'),
+            testPing: document.getElementById('test-ping'),
+            browserTest: document.getElementById('browser-test'),
+            clearBtn: document.getElementById('clear-btn')
+        };
+
+        // Funciones de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#00ff00',
+                success: '#00ff00',
+                error: '#ff6b6b',
+                warn: '#ffeb3b'
+            };
+            
+            const color = colors[type] || colors.info;
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            
+            elements.console.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            elements.console.scrollTop = elements.console.scrollHeight;
+        }
+
+        function clearConsole() {
+            elements.console.innerHTML = '';
+            log('Console limpiada');
+        }
+
+        // Funciones de configuración
+        function saveConfig() {
+            config.baseUrl = elements.serverUrl.value.trim().replace(/\/$/, '');
+            config.username = elements.username.value.trim();
+            config.password = elements.password.value.trim();
+
+            if (!config.baseUrl) {
+                log('Error: URL del servidor requerida', 'error');
+                return;
+            }
+
+            localStorage.setItem('simple_config', JSON.stringify(config));
+            
+            updateStatus('Configuración guardada', 'ok');
+            log(`Configuración guardada - URL: ${config.baseUrl}, Usuario: ${config.username}`, 'success');
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('simple_config');
+            if (saved) {
+                try {
+                    config = JSON.parse(saved);
+                    elements.serverUrl.value = config.baseUrl || '';
+                    elements.username.value = config.username || '';
+                    elements.password.value = config.password || '';
+                    log('Configuración cargada desde localStorage', 'success');
+                } catch (e) {
+                    log('Error cargando configuración guardada', 'error');
+                }
+            }
+        }
+
+        // Función para actualizar status
+        function updateStatus(message, type) {
+            elements.status.textContent = 'Estado: ' + message;
+            elements.status.className = 'status status-' + type;
+        }
+
+        // Función para generar headers de auth
+        function getAuthHeaders() {
+            if (!config.username || !config.password) {
+                return { 'Content-Type': 'application/json' };
+            }
+            
+            const credentials = btoa(config.username + ':' + config.password);
+            return {
+                'Authorization': 'Basic ' + credentials,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Función principal de test
+        async function testConnection() {
+            if (!config.baseUrl) {
+                log('Error: Guarda primero la configuración', 'error');
+                return;
+            }
+
+            log(`Probando conexión a: ${config.baseUrl}/api/health`);
+            updateStatus('Probando conexión...', 'error');
+
+            try {
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET',
+                    headers: getAuthHeaders(),
+                    mode: 'cors'
+                });
+
+                log(`Respuesta recibida: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`Conexión exitosa - Status: ${data.status}, Uptime: ${Math.floor(data.uptime)}s`, 'success');
+                    updateStatus('Conectado correctamente', 'ok');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                log(`Error de conexión: ${error.message}`, 'error');
+                updateStatus('Error de conexión', 'error');
+                
+                // Diagnóstico adicional
+                if (error.message.includes('CORS')) {
+                    log('Posible problema de CORS', 'warn');
+                } else if (error.message.includes('Failed to fetch')) {
+                    log('El servidor puede estar inactivo o hay problemas de red', 'warn');
+                }
+            }
+        }
+
+        // Test específico de health
+        async function testHealth() {
+            if (!config.baseUrl) {
+                log('Error: Guarda primero la configuración', 'error');
+                return;
+            }
+
+            log('Testing health endpoint...');
+
+            try {
+                const response = await fetch(config.baseUrl + '/api/health', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                const text = await response.text();
+                log(`Respuesta raw: ${text.substring(0, 100)}...`);
+
+                if (response.ok) {
+                    const data = JSON.parse(text);
+                    log(`Health OK: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`Health Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Error en health test: ${error.message}`, 'error');
+            }
+        }
+
+        // Test de API específica
+        async function testAPI(endpoint, data = null) {
+            if (!config.baseUrl) {
+                log('Error: Guarda primero la configuración', 'error');
+                return;
+            }
+
+            const testData = data || {
+                test: true,
+                timestamp: new Date().toISOString(),
+                source: 'simple-dashboard'
+            };
+
+            log(`Testing API: /api/${endpoint}`);
+
+            try {
+                const response = await fetch(config.baseUrl + '/api/' + endpoint, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(testData)
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    log(`API ${endpoint} OK - RequestID: ${responseData.requestId}`, 'success');
+                } else {
+                    log(`API ${endpoint} Error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`Error en API ${endpoint}: ${error.message}`, 'error');
+            }
+        }
+
+        // Abrir en browser
+        function openInBrowser() {
+            if (!config.baseUrl) {
+                log('Error: Guarda primero la configuración', 'error');
+                return;
+            }
+
+            const url = config.baseUrl + '/api/health';
+            log(`Abriendo en nueva pestaña: ${url}`);
+            log(`Usar credenciales: ${config.username} / ${config.password}`);
+            window.open(url, '_blank');
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Dashboard iniciado correctamente', 'success');
+            loadConfig();
+
+            // Asignar eventos
+            elements.saveBtn.addEventListener('click', saveConfig);
+            elements.testBtn.addEventListener('click', testConnection);
+            elements.healthBtn.addEventListener('click', testHealth);
+            elements.testOrden.addEventListener('click', () => testAPI('evaluar/orden'));
+            elements.testPing.addEventListener('click', () => testAPI('pruebas/ping'));
+            elements.browserTest.addEventListener('click', openInBrowser);
+            elements.clearBtn.addEventListener('click', clearConsole);
+
+            log('Configura la URL y credenciales, luego click "Guardar Config"');
+        });
+
+        // Test automático al cargar si ya hay configuración
+        window.addEventListener('load', function() {
+            if (config.baseUrl) {
+                log('Configuración detectada, ejecutando test automático en 2 segundos...');
+                setTimeout(testConnection, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
