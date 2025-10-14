@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración CPI - Backend CPI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h3 {
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            color: #424242;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Configuración CPI</h1>
+            <p>Configure las credenciales para el sistema de monitoreo automático</p>
+        </div>
+
+        <div class="info-box">
+            <h3>ℹ️ Información Importante</h3>
+            <p>Las credenciales se almacenan de forma segura y se utilizan únicamente para el monitoreo automático de las integraciones CPI los lunes, miércoles y viernes.</p>
+        </div>
+
+        <form id="credentialsForm">
+            <div class="form-group">
+                <label for="username">Usuario CPI:</label>
+                <input type="text" id="username" name="username" placeholder="Ingresa tu usuario de CPI" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña CPI:</label>
+                <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña de CPI" required>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="testConnection()">🔍 Probar Conexión</button>
+                <button type="submit" class="btn btn-primary">💾 Guardar Credenciales</button>
+            </div>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Procesando...</p>
+        </div>
+
+        <div class="status-message" id="statusMessage"></div>
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/dashboard" style="color: #667eea; text-decoration: none;">← Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showMessage(message, isError = false) {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+            statusEl.style.display = 'block';
+            hideLoading();
+        }
+
+        async function testConnection() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('Por favor ingresa usuario y contraseña', true);
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Primero configurar las credenciales temporalmente
+                const configResponse = await fetch('/api/monitoring/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa('admin:Cpilogger')
+                    },
+                    body: JSON.stringify({
+                        credentials: { username, password }
+                    })
+                });
+
+                if (!configResponse.ok) {
+                    throw new Error('Error configurando credenciales temporales');
+                }
+
+                // Luego probar la conexión
+                const testResponse = await fetch('/api/monitoring/test-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin:Cpilogger')
+                    }
+                });
+
+                const result = await testResponse.json();
+
+                if (result.success && result.result.success) {
+                    showMessage('✅ Conexión exitosa a CPI');
+                } else {
+                    showMessage('❌ Error de conexión: ' + (result.result?.error || 'Error desconocido'), true);
+                }
+
+            } catch (error) {
+                showMessage('❌ Error probando conexión: ' + error.message, true);
+            }
+        }
+
+        document.getElementById('credentialsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('Por favor completa todos los campos', true);
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const response = await fetch('/api/monitoring/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + btoa('admin:Cpilogger')
+                    },
+                    body: JSON.stringify({
+                        credentials: { username, password }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('✅ Credenciales guardadas exitosamente. El sistema de monitoreo está listo.');
+                    
+                    // Limpiar formulario
+                    document.getElementById('credentialsForm').reset();
+                    
+                    // Redirigir al dashboard después de 3 segundos
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                } else {
+                    showMessage('❌ Error guardando credenciales: ' + result.error, true);
+                }
+
+            } catch (error) {
+                showMessage('❌ Error de conexión: ' + error.message, true);
+            }
+        });
+
+        // Cargar estado actual
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('/api/monitoring/config', {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('admin:Cpilogger')
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.config.credentials.configured) {
+                    showMessage('ℹ️ Credenciales ya configuradas. Puedes actualizarlas si es necesario.');
+                }
+
+            } catch (error) {
+                console.log('No se pudo cargar el estado actual');
+            }
+        });
+    </script>
+</body>
+</html>

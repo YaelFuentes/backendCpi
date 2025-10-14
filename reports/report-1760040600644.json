@@ -1,0 +1,26 @@
+{
+  "id": "report-1760040600644",
+  "timestamp": "2025-10-09T20:09:28.081Z",
+  "duration": 32563,
+  "screenshot": "C:\\proyectos\\backendCpi\\reports\\screenshots\\cpi-monitoring-2025-10-09T20-09-55.png",
+  "integrationStatus": {
+    "total": 0,
+    "statusCounts": {},
+    "integrations": [],
+    "hasErrors": false,
+    "hasWarnings": false,
+    "overallStatus": "success"
+  },
+  "summary": {
+    "totalIntegrations": 0,
+    "errors": 0,
+    "warnings": 0,
+    "success": 0,
+    "overallStatus": "success"
+  },
+  "metadata": {
+    "cpiUrl": "https://e0980-tmn.hci.us2.hana.ondemand.com/itspaces/shell/integration",
+    "monitoringVersion": "1.0.0",
+    "environment": "development"
+  }
+}

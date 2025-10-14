@@ -5,6 +5,7 @@ const aiService = require('../services/aiService');
 // Sub-routers modulares
 const evaluarRoutes = require('./evaluar');
 const pruebasRoutes = require('./pruebas');
+const monitoringRoutes = require('./monitoring');
 
 // Datos de ejemplo (en una aplicación real usarías una base de datos)
 let users = [
@@ -22,6 +23,7 @@ let products = [
 // Montar sub-routers modulares
 router.use('/evaluar', evaluarRoutes);
 router.use('/pruebas', pruebasRoutes);
+router.use('/monitoring', monitoringRoutes);
 
 // Ruta de health check
 router.get('/health', (req, res) => {
